@@ -1,0 +1,130 @@
+<html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notes App</title>
+  <style>
+    /* Add your CSS styles here */
+  </style>
+</head>
+<body>
+  <h1>Notes App</h1>
+
+  <div>
+    <input type="text" id="headline" placeholder="Headline">
+    <input type="date" id="dueDate">
+    <input type="color" id="bgColor" value="#FFFFFF">
+    <textarea id="noteBody" placeholder="Note Body"></textarea>
+    <button id="addNote">Add Note</button>
+  </div>
+
+  <div>
+    <label for="sort">Sort by:</label>
+    <select id="sort">
+      <option value="headline">Headline</option>
+      <option value="dueDate">Due Date</option>
+      <option value="createdDate">Created Date</option>
+    </select>
+    <input type="text" id="search" placeholder="Search by headline">
+  </div>
+
+  <ul id="notesList">
+    <!-- Notes will be added here dynamically -->
+  </ul>
+
+  <button id="clearNotes">Delete All Notes</button>
+
+  <script>
+    interface Note {
+      headline: string;
+      dueDate: string;
+      createdDate: string;
+      bgColor: string;
+      body: string;
+    }
+
+    const notes: Note[] = JSON.parse(localStorage.getItem('notes') || '[]');
+
+    function displayNotes(notesToDisplay = notes) {
+      const notesList = document.getElementById('notesList');
+      notesList.innerHTML = '';
+
+      notesToDisplay.forEach((note, index) => {
+        const noteItem = document.createElement('li');
+        noteItem.innerHTML = `
+          <div style="background-color: ${note.bgColor}">
+            <h2>${note.headline}</h2>
+            <p>Due: ${note.dueDate}</p>
+            <p>Created: ${note.createdDate}</p>
+            <p>${note.body}</p>
+            <button onclick="deleteNote(${index})">Delete</button>
+          </div>
+        `;
+        notesList.appendChild(noteItem);
+      });
+    }
+
+    function deleteNote(index: number) {
+      notes.splice(index, 1);
+      displayNotes();
+      saveNotesToLocalStorage();
+    }
+
+    function saveNotesToLocalStorage() {
+      localStorage.setItem('notes', JSON.stringify(notes));
+    }
+
+    document.getElementById('addNote').addEventListener('click', () => {
+      const headlineInput = document.getElementById('headline') as HTMLInputElement;
+      const dueDateInput = document.getElementById('dueDate') as HTMLInputElement;
+      const bgColorInput = document.getElementById('bgColor') as HTMLInputElement;
+      const noteBodyInput = document.getElementById('noteBody') as HTMLTextAreaElement;
+
+      const headline = headlineInput.value;
+      const dueDate = dueDateInput.value;
+      const bgColor = bgColorInput.value;
+      const noteBody = noteBodyInput.value;
+
+      if (headline && dueDate) {
+        const newNote: Note = {
+          headline,
+          dueDate,
+          createdDate: new Date().toLocaleDateString(),
+          bgColor,
+          body: noteBody,
+        };
+        notes.push(newNote);
+        displayNotes();
+        saveNotesToLocalStorage();
+      }
+    });
+
+    document.getElementById('sort').addEventListener('change', () => {
+      const sortBy = (document.getElementById('sort') as HTMLSelectElement).value;
+      notes.sort((a, b) => (a[sortBy] < b[sortBy] ? -1 : a[sortBy] > b[sortBy] ? 1 : 0));
+      displayNotes();
+      saveNotesToLocalStorage();
+    });
+
+    document.getElementById('search').addEventListener('input', () => {
+      const searchKeyword = (document.getElementById('search') as HTMLInputElement).value.toLowerCase();
+      const filteredNotes = notes.filter(note =>
+        note.headline.toLowerCase().includes(searchKeyword)
+      );
+      displayNotes(filteredNotes);
+    });
+
+    document.getElementById('clearNotes').addEventListener('click', () => {
+      if (confirm("Are you sure you want to delete all notes?")) {
+        notes.length = 0;
+        displayNotes();
+        saveNotesToLocalStorage();
+      }
+    });
+
+    displayNotes();
+  </script>
+</body>
+  </html>
